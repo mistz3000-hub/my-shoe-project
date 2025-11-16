@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Shoe Project</title>
+    <style>
+        body { margin: 0; background-color: #f0f0f0; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+        }
+        button {
+            font-size: 16px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="info">
+        <button id="toggleButton">กดเพื่อดู 9 ชั้น</button>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // 1. สร้าง "เวที" (Scene), "กล้อง" (Camera), และ "ตัวฉายภาพ" (Renderer)
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0); // สีพื้นหลัง
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5; // ขยับกล้องออกมา
+
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 2. เพิ่ม "ไฟ" (Lights)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+        directionalLight.position.set(5, 10, 7.5);
+        scene.add(directionalLight);
+
+        // 3. เพิ่ม "ตัวหมุน" (OrbitControls) ให้ใช้เมาส์ลากหมุนได้
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // 4. นี่คือส่วนสำคัญ: โหลดโมเดล
+        const loader = new GLTFLoader();
+        let shoeModel, layersModel;
+        let isShoeVisible = true;
+
+        // --- โหลดโมเดลรองเท้า ---
+        // !!! สำคัญ: ไฟล์ .gltf ของคุณต้องชื่อ 'shoe.gltf'
+        loader.load('shoe.gltf', (gltf) => {
+            shoeModel = gltf.scene;
+            scene.add(shoeModel);
+            console.log('โหลด shoe.gltf สำเร็จ');
+        });
+
+        // --- โหลดโมเดล 9 ชั้น ---
+        // !!! สำคัญ: ไฟล์ .gltf ของคุณต้องชื่อ 'layers.gltf'
+        loader.load('layers.gltf', (gltf) => {
+            layersModel = gltf.scene;
+            layersModel.visible = false; // ซ่อนไว้ก่อน
+            scene.add(layersModel);
+            console.log('โหลด layers.gltf สำเร็จ');
+        });
+
+        // 5. ทำงาน "ปุ่มกด"
+        const button = document.getElementById('toggleButton');
+        button.addEventListener('click', () => {
+            if (isShoeVisible) {
+                // ถ้าโชว์รองเท้าอยู่ ให้สลับไปโชว์ 9 ชั้น
+                if (shoeModel) shoeModel.visible = false;
+                if (layersModel) layersModel.visible = true;
+                button.textContent = "กดเพื่อดูรองเท้า";
+                isShoeVisible = false;
+            } else {
+                // ถ้าโชว์ 9 ชั้นอยู่ ให้สลับไปโชว์รองเท้า
+                if (shoeModel) shoeModel.visible = true;
+                if (layersModel) layersModel.visible = false;
+                button.textContent = "กดเพื่อดู 9 ชั้น";
+                isShoeVisible = true;
+            }
+        });
+
+        // 6. Loop การวาดภาพ
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update(); // อัปเดตตัวหมุน
+            renderer.render(scene, camera);
+        }
+
+        animate(); // เริ่ม!
+    </script>
+</body>
+</html>
